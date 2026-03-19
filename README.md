@@ -45,11 +45,11 @@ chmod +x install.sh
 在 Claude Code 中：
 
 ```
-/xhs 栗噔噔
+/xhs 博主昵称
 ```
 
 ```
-/xhs https://www.xiaohongshu.com/user/profile/550aad1aa46e96256f711e78
+/xhs https://www.xiaohongshu.com/user/profile/<user_id>
 ```
 
 ### 首次使用：提供 Cookie
@@ -72,12 +72,12 @@ Cookie 会保存在 `~/.claude/xhs_config.json`，下次自动复用，失效时
 2. 本地 MD 文件（当前目录）
 ```
 
-**输出文件（以「栗噔噔」为例）：**
+**输出文件示例：**
 
 | 文件 | 内容 |
 |------|------|
-| `栗噔噔_账号分析报告_20260319.md` | 7 个维度的深度分析 |
-| `栗噔噔_全量笔记_20260319.md` | 全量笔记按点赞排序 |
+| `{博主昵称}_账号分析报告_{日期}.md` | 7 个维度的深度分析 |
+| `{博主昵称}_全量笔记_{日期}.md` | 全量笔记按点赞排序 |
 
 ## 注意事项
 
