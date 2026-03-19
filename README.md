@@ -5,7 +5,7 @@
 ## 功能
 
 - 🔍 支持按**昵称**或**主页链接**分析任意公开博主
-- 📦 自动爬取**全量历史笔记**（使用 Playwright 模拟滚动分页）
+- 📦 自动爬取历史笔记（默认最新 200 篇，可自定义数量或抓取全部）
 - 🤖 由 Claude 完成 7 个维度的深度分析：
   - 基础信息 & 粉丝数据
   - 内容主题聚类
@@ -52,6 +52,15 @@ chmod +x install.sh
 /xhs https://www.xiaohongshu.com/user/profile/<user_id>
 ```
 
+### 控制抓取数量
+
+默认抓取最新 200 篇，也可以在对话中指定：
+
+```
+/xhs 某博主 抓100篇
+/xhs 某博主 全部
+```
+
 ### 首次使用：提供 Cookie
 
 小红书需要登录才能查看完整内容。首次运行时 Claude 会引导你获取 Cookie：
@@ -78,6 +87,15 @@ Cookie 会保存在 `~/.claude/xhs_config.json`，下次自动复用，失效时
 |------|------|
 | `{博主昵称}_账号分析报告_{日期}.md` | 7 个维度的深度分析 |
 | `{博主昵称}_全量笔记_{日期}.md` | 全量笔记按点赞排序 |
+
+## 更新
+
+已安装的用户运行以下命令即可更新（无需重装 Playwright）：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/caitlinChang/xhs-analyzer-skill/main/commands/xhs.md -o ~/.claude/commands/xhs.md
+curl -fsSL https://raw.githubusercontent.com/caitlinChang/xhs-analyzer-skill/main/scripts/xhs_scrape.py -o ~/.claude/scripts/xhs_scrape.py
+```
 
 ## 注意事项
 
