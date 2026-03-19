@@ -1,8 +1,9 @@
 """
-小红书博主全量笔记爬虫
+小红书博主笔记爬虫
 用法：
   python3 xhs_scrape.py --user-id <ID> --cookies-file ~/.claude/xhs_config.json
   python3 xhs_scrape.py --name <昵称> --cookies-file ~/.claude/xhs_config.json
+  python3 xhs_scrape.py --name <昵称> --limit 100   # 只抓取最新100篇
 """
 
 import argparse
@@ -167,7 +168,7 @@ async def fetch_profile(page, user_id: str):
 
 # ── 全量笔记收集 ──────────────────────────────────────────
 
-async def collect_all_notes(page, html: str) -> list:
+async def collect_all_notes(page, html: str, limit: int = 0) -> list:
     all_notes = {}
 
     async def handle_response(response):
@@ -185,12 +186,14 @@ async def collect_all_notes(page, html: str) -> list:
                             "xsec_token": n.get("xsec_token", ""),
                             "published_at": parse_note_id_time(nid),
                         }
-                print(f"  [API] 累计 {len(all_notes)} 篇，has_more={data.get('data', {}).get('has_more', False)}")
+                limit_str = f"/{limit}" if limit else ""
+                print(f"  [API] 累计 {len(all_notes)}{limit_str} 篇，has_more={data.get('data', {}).get('has_more', False)}")
             except Exception:
                 pass
 
     page.on("response", handle_response)
-    print("[笔记列表] 开始滚动加载...")
+    limit_str = f"（上限 {limit} 篇）" if limit else ""
+    print(f"[笔记列表] 开始滚动加载{limit_str}...")
 
     # 补充首屏数据
     state = extract_initial_state(html)
@@ -209,9 +212,12 @@ async def collect_all_notes(page, html: str) -> list:
                         "published_at": parse_note_id_time(nid),
                     }
 
-    # 持续滚动
+    # 持续滚动，达到 limit 时停止
     prev_count, no_new_rounds = 0, 0
     while no_new_rounds < 4:
+        if limit and len(all_notes) >= limit:
+            print(f"  [上限] 已达到 {limit} 篇，停止滚动")
+            break
         await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
         await asyncio.sleep(random.uniform(2.0, 3.0))
         if len(all_notes) == prev_count:
@@ -220,8 +226,11 @@ async def collect_all_notes(page, html: str) -> list:
             no_new_rounds = 0
             prev_count = len(all_notes)
 
-    print(f"  [完成] 共收集到 {len(all_notes)} 篇笔记")
-    return list(all_notes.values())
+    notes = list(all_notes.values())
+    if limit and len(notes) > limit:
+        notes = notes[:limit]
+    print(f"  [完成] 共收集到 {len(notes)} 篇笔记")
+    return notes
 
 
 # ── 逐篇获取正文 ──────────────────────────────────────────
@@ -261,7 +270,7 @@ async def fetch_note_contents(context, notes: list) -> list:
 
 # ── 主流程 ────────────────────────────────────────────────
 
-async def run(user_id: str | None, name: str | None, cookies_str: str):
+async def run(user_id: str | None, name: str | None, cookies_str: str, limit: int = 200):
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         context = await browser.new_context(
@@ -279,7 +288,7 @@ async def run(user_id: str | None, name: str | None, cookies_str: str):
                 sys.exit(1)
 
         profile, html = await fetch_profile(page, user_id)
-        notes = await collect_all_notes(page, html)
+        notes = await collect_all_notes(page, html, limit=limit)
 
         print(f"\n[正文] 开始逐篇抓取（共 {len(notes)} 篇，预计 {max(1, len(notes)*2//60)} 分钟）...")
         notes = await fetch_note_contents(context, notes)
@@ -303,6 +312,7 @@ def main():
     parser.add_argument("--user-id", help="博主 user_id（从主页 URL 提取）")
     parser.add_argument("--name", help="博主昵称（将自动搜索）")
     parser.add_argument("--cookies-file", default="~/.claude/xhs_config.json")
+    parser.add_argument("--limit", type=int, default=200, help="最多抓取笔记数量，0 表示不限（默认 200）")
     args = parser.parse_args()
 
     if not args.user_id and not args.name:
@@ -314,7 +324,7 @@ def main():
         print("[错误] Cookie 配置为空，请先在 ~/.claude/xhs_config.json 中填入 cookies 字段")
         sys.exit(2)
 
-    asyncio.run(run(args.user_id, args.name, cookies_str))
+    asyncio.run(run(args.user_id, args.name, cookies_str, limit=args.limit))
 
 
 if __name__ == "__main__":

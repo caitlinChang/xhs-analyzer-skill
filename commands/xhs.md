@@ -16,6 +16,8 @@
 从用户输入中提取目标博主信息：
 - 如果包含 `/user/profile/`，提取后面的 `user_id`，使用 `--user-id` 参数
 - 否则视为昵称，使用 `--name` 参数
+- 如果用户指定了抓取数量（如「抓100篇」「最新50篇」），记录为 `limit`；否则默认 `limit=200`
+- `limit=0` 表示抓取全部
 
 ### Step 1：检查 Cookie 配置
 
@@ -46,18 +48,20 @@
 使用 Bash 工具执行（根据输入类型选择参数）：
 
 ```bash
-# 按 user_id
-python3 ~/.claude/scripts/xhs_scrape.py --user-id <USER_ID> --cookies-file ~/.claude/xhs_config.json
+# 按 user_id（默认抓取200篇）
+python3 ~/.claude/scripts/xhs_scrape.py --user-id <USER_ID> --cookies-file ~/.claude/xhs_config.json --limit <LIMIT>
 
-# 按昵称
-python3 ~/.claude/scripts/xhs_scrape.py --name "<昵称>" --cookies-file ~/.claude/xhs_config.json
+# 按昵称（默认抓取200篇）
+python3 ~/.claude/scripts/xhs_scrape.py --name "<昵称>" --cookies-file ~/.claude/xhs_config.json --limit <LIMIT>
 ```
+
+`<LIMIT>` 默认填 `200`；用户指定数量时填用户说的值；用户要求抓全部时填 `0`。
 
 脚本输出文件到 `/tmp/xhs_raw/`：
 - `profile.json` — 博主基础信息
-- `notes.json` — 全量笔记（含标题、类型、点赞、正文、发布时间）
+- `notes.json` — 笔记列表（含标题、类型、点赞、正文、发布时间）
 
-脚本预计耗时：笔记总数 × 2 秒，运行时实时输出进度。
+脚本预计耗时：笔记数量 × 2 秒，运行时实时输出进度。
 
 ### Step 3：读取原始数据
 
